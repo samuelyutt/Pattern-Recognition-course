@@ -7,7 +7,7 @@ train_data_path = '../data/train_data.csv'
 test_data_path = '../data/test_data.csv'
 
 # Params
-learning_rate = 0.05
+learning_rate = 0.002
 iterations_limit = 1000
 weights = {
     'mean_absolute_error': [0.0, 0.0],
@@ -55,6 +55,19 @@ def gradient_descent(method, data):
     weights[method][0] = new_b0
     weights[method][1] = new_b1
 
+def error_value(method, data_point):
+    prediction = weights[method][0] + data_point[0] * weights[method][1]
+    if method == 'mean_absolute_error':
+        return abs(prediction - data_point[1])
+    elif method == 'mean_square_error':
+        return (prediction - data_point[1]) ** 2
+
+def mean_of_error_value(method, data):
+    sum_of_error_value = 0.0
+    for row in data:
+        sum_of_error_value += error_value(method, [row[0], row[1]])
+    return sum_of_error_value / len(data)
+
 def main():
     with open(train_data_path, newline='') as csvfile:
         train_data = data_process(list(csv.reader(csvfile)))
@@ -76,11 +89,16 @@ def main():
     # plt.plot(plot_values[0], plot_values[1], 'o')
 
     for method in weights:
+        losses = []
         for iteration_cnt in range(iterations_limit):
             gradient_descent(method, train_data)
+            loss = mean_of_error_value(method, train_data)
+            # print(iteration_cnt, loss)
+            losses.append(loss)
 
-        x = np.linspace(-3, 3, 100)
-        plt.plot(x, weights[method][0] + weights[method][1] * x, label=method)
+        plt.plot([i for i in range(len(losses))], losses, label=method)
+        # x = np.linspace(-3, 3, 100)
+        # plt.plot(x, weights[method][0] + weights[method][1] * x, label=method)
 
     print(weights)
     
