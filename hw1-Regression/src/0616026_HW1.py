@@ -26,10 +26,12 @@ def data_process(data):
 
 
 def partial_differential(method, data_point, term):
-    # Calculate the partial differential value of the given data point W.R.T the given term
+    # Calculate the partial differential value of the given data point W.R.T
+    # the given term
     if method == 'mean_absolute_error':
         # For MAE
-        if weights[method][0] + weights[method][1] * data_point[0] > data_point[1]:
+        if (weights[method][0] + weights[method][1] * data_point[0] >
+                data_point[1]):
             if term == 0:
                 return 1
             if term == 1:
@@ -44,11 +46,15 @@ def partial_differential(method, data_point, term):
         if term == 0:
             # W.R.T b0
             # b0 + b1 * x - y
-            return 2 * weights[method][0] + weights[method][1] * data_point[0] - data_point[1]
+            return (2 * weights[method][0] +
+                    weights[method][1] * data_point[0] -
+                    data_point[1])
         elif term == 1:
             # W.R.T b1
             # (b0 + b1 * x - y) * x
-            return 2 * (weights[method][0] + weights[method][1] * data_point[0] - data_point[1]) * data_point[0]
+            return (2 * (weights[method][0] +
+                    weights[method][1] * data_point[0] -
+                    data_point[1]) * data_point[0])
 
 
 def mean_of_partial_differential(method, data, term):
@@ -62,8 +68,10 @@ def mean_of_partial_differential(method, data, term):
 
 def gradient_descent(method, data):
     # Update the weights
-    new_b0 = weights[method][0] - learning_rate * mean_of_partial_differential(method, data, 0)
-    new_b1 = weights[method][1] - learning_rate * mean_of_partial_differential(method, data, 1)
+    new_b0 = (weights[method][0] -
+              learning_rate * mean_of_partial_differential(method, data, 0))
+    new_b1 = (weights[method][1] -
+              learning_rate * mean_of_partial_differential(method, data, 1))
     weights[method][0] = new_b0
     weights[method][1] = new_b1
 
@@ -106,15 +114,18 @@ def main():
             loss = mean_of_error_value(method, train_data)
             losses.append(loss)
         plt.plot([i for i in range(len(losses))], losses, label=method)
-        
+
         # Testing
         mean_error = mean_of_error_value(method, test_data)
-        print(method, 'between predictions and the ground truths on the testing data:', mean_error)
+        print(method,
+              'between predictions and the ground truths on the testing data:',
+              mean_error)
 
     # Results and plots
     print('learning_rate\t', learning_rate)
     print('iterations\t', iterations_limit)
-    print('weights\t\t', weights, '(intercepts (β0) and weights (β1) respectively for each method)')
+    print('weights\t\t', weights,
+          '(intercepts (β0) and weights (β1) respectively for each method)')
     plt.legend()
     plt.show()
 
