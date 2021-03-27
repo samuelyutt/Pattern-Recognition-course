@@ -26,8 +26,8 @@ def data_process(data):
 
 
 def partial_differential(method, data_point, term):
-    # Calculate the partial differential value of the given data point W.R.T
-    # the given term
+    # Calculate the partial differential value of the given data point
+    # W.R.T the given term
     if method == 'mean_absolute_error':
         # For MAE
         if (weights[method][0] + weights[method][1] * data_point[0] >
@@ -91,7 +91,7 @@ def error_value(method, data_point):
 
 
 def mean_of_error_value(method, data):
-    # Sum up the error value value of each data
+    # Sum up the error value of each data
     # Return the mean of the total
     sum_of_error_value = 0.0
     for row in data:
