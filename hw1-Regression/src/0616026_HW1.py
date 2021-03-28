@@ -1,4 +1,5 @@
-import csv, random
+import csv
+import random
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -10,8 +11,12 @@ test_data_path = '../data/test_data.csv'
 learning_rate = 0.002
 iterations_limit = 1000
 weights = {
-    'mean_absolute_error': [random.uniform(0.0, 10.0), random.uniform(0.0, 10.0)],
-    'mean_square_error': [random.uniform(0.0, 10.0), random.uniform(0.0, 10.0)]
+    'mean_absolute_error': [
+        random.uniform(0.0, 10.0),
+        random.uniform(0.0, 10.0)],
+    'mean_square_error': [
+        random.uniform(0.0, 10.0),
+        random.uniform(0.0, 10.0)]
 }
 
 
