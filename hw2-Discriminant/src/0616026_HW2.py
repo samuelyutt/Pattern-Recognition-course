@@ -92,19 +92,30 @@ def project_data(datasets, w):
     return projection_array
 
 
-def FLD(data, sw, sb, m0, m1, w):
-    a = np.matmul(
-        np.matmul(w.T, sb),
-        w
-    )
-    b = np.matmul(
-        np.matmul(w.T, sw),
-        w
-    )
-    print ('a', a, b, data)
-    print(a/b)
-    return a/b
+def cal_nearest_neighbor_idx(data_project, datasets_project):
+    # Return the index of the nearest neighbor
+    # among the projected datasets
+    x_values = np.array([data[0] for data in datasets_project])
+    abs_val_array = np.abs(x_values - data_project[0])
+    min_diff_idx = abs_val_array.argmin()
+    return min_diff_idx
 
+
+def FLD(train_datasets, train_labels, test_datasets, w):
+    predictions = np.array([], dtype=np.int64)
+    x_test_datasets_project = project_data(test_datasets, w)
+    x_train_datasets_project = project_data(train_datasets, w)
+
+    for x_test_data in x_test_datasets_project:
+        nearest_neighbor_idx = cal_nearest_neighbor_idx(
+            x_test_data,
+            x_train_datasets_project
+        )
+        prediction = train_labels[nearest_neighbor_idx]
+        predictions = np.append(predictions, prediction)
+
+    return predictions
+    
 
 def plot_results(classified_vector, w):
     for label in classified_vector:
@@ -144,17 +155,21 @@ def main():
     x_test = np.load(x_test_data_path)
     y_test = np.load(y_test_data_path)
 
-    # data_x = np.array([[1.0, 1.0], [2.0, 2.3], [-6.5, 1.6], [1.0, -1.0], [2.0, -2.5]])
-    # data_y = np.array([1, 1, 1, 0, 0])
+    # Training
     train_classified_vector = classify_data(x_train, y_train)
     m0, m1 = cal_mean(train_classified_vector)
     sw = cal_within_class_scatter_matrix(train_classified_vector, m0, m1)
     sb = cal_between_class_scatter_matrix(m0, m1)
     w = cal_weight(sw, m0, m1)
 
+    # Testing
+    predictions = FLD(x_train, y_train, x_test, w)
+    correct_cnt = np.sum((np.equal(predictions, y_test)))
+    acc = correct_cnt / len(x_test)
+    print(f"Accuracy of test-set {acc}")
 
+    # Plot the results
     test_classified_vector = classify_data(x_test, y_test)
-    # test_classified_vector = classify_data(x_train, y_train)
     plot_results(test_classified_vector, w)
 
 
