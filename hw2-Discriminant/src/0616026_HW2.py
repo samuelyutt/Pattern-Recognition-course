@@ -54,6 +54,13 @@ def cal_within_class_scatter_matrix(classified_vector, m0, m1):
 
     sw = classified_sum[0] + classified_sum[1]
     print(f"Within-class scatter matrix SW: {sw}")
+    return sw
+
+def cal_between_class_scatter_matrix(m0, m1):
+    diff = np.array([m1 - m0])
+    sb = np.matmul(diff.T, diff)
+    print(f"Between-class scatter matrix SB: {sb}")
+    return sb
 
 
 def main():
@@ -65,10 +72,11 @@ def main():
 
     classified_vector = classify_data(x_train, y_train)
     m0, m1 = cal_mean(classified_vector)
-    cal_within_class_scatter_matrix(classified_vector, m0, m1)
+    sw = cal_within_class_scatter_matrix(classified_vector, m0, m1)
+    sb = cal_between_class_scatter_matrix(m0, m1)
     
-    print(x_train)
-    print(y_train)
+    # print(x_train)
+    # print(y_train)
     # print(x_test)
     # print(y_test)
 
