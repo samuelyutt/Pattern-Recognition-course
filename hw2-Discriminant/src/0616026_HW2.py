@@ -8,22 +8,26 @@ x_test_data_path = '../data/x_test.npy'
 y_test_data_path = '../data/y_test.npy'
 
 
-def cal_mean(datasets, labels):
+def classify_data(datasets, labels):
     classified_vector = {}
 
     for i in range(len(datasets)):
-        new_data = [datasets[i][0], datasets[i][1]]
+        data = [datasets[i][0], datasets[i][1]]
         label = labels[i]
 
         if label not in classified_vector:
-            classified_vector[label] = np.array([new_data])
+            classified_vector[label] = np.array([data])
         else:
             classified_vector[label] = np.append(
                 classified_vector[label],
-                [new_data],
+                [data],
                 axis=0
             )
-    
+
+    return classified_vector
+
+
+def cal_mean(classified_vector):
     m0 = np.mean(classified_vector[0], axis=0)
     m1 = np.mean(classified_vector[1], axis=0)
     print(
@@ -33,6 +37,25 @@ def cal_mean(datasets, labels):
     return m0, m1
 
 
+def cal_within_class_scatter_matrix(classified_vector, m0, m1):
+    classified_sum = {}
+
+    for label in classified_vector:
+        m = m0 if label == 0 else m1
+
+        for data in classified_vector[label]:
+            diff = np.array([data - m])
+            dot = np.matmul(diff.T, diff)
+            
+            if label not in classified_sum:
+                classified_sum[label] = dot
+            else:
+                classified_sum[label] += dot
+
+    sw = classified_sum[0] + classified_sum[1]
+    print(f"Within-class scatter matrix SW: {sw}")
+
+
 def main():
     # Read the datasets
     x_train = np.load(x_train_data_path)
@@ -40,7 +63,9 @@ def main():
     x_test = np.load(x_test_data_path)
     y_test = np.load(y_test_data_path)
 
-    m0, m1 = cal_mean(x_train, y_train)
+    classified_vector = classify_data(x_train, y_train)
+    m0, m1 = cal_mean(classified_vector)
+    cal_within_class_scatter_matrix(classified_vector, m0, m1)
     
     print(x_train)
     print(y_train)
