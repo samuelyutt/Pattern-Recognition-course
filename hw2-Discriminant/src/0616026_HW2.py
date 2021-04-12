@@ -185,7 +185,7 @@ def main():
     predictions = FLD(x_train, y_train, x_test, w)
     correct_cnt = np.sum((np.equal(predictions, y_test)))
     acc = correct_cnt / len(x_test)
-    print(f"Accuracy of test-set {acc}")
+    print(f'Accuracy of test-set {acc}')
 
     # Plot the results
     test_classified_vector = classify_data(x_test, y_test)
