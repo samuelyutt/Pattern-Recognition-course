@@ -114,7 +114,7 @@ def FLD(train_datasets, train_labels, test_datasets, w):
 
     for x_test_data in x_test_datasets_project:
         # Get the nearest neighbor's index and
-        # predict the testing ata
+        # predict the testing data
         nearest_neighbor_idx = cal_nearest_neighbor_idx(
             x_test_data,
             x_train_datasets_project
