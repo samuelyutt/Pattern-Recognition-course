@@ -107,7 +107,7 @@ def FLD(train_datasets, train_labels, test_datasets, w):
     # Predict the test datasets according to the given training datasets,
     # training labels, and trained weights
     predictions = np.array([], dtype=np.int64)
-    
+
     # Project the datasets to the projection line
     x_train_datasets_project = project_data(train_datasets, w)
     x_test_datasets_project = project_data(test_datasets, w)
@@ -123,14 +123,14 @@ def FLD(train_datasets, train_labels, test_datasets, w):
         predictions = np.append(predictions, prediction)
 
     return predictions
-    
+
 
 def plot_results(classified_vector, w):
     # Plot the results
     for label in classified_vector:
         datasets = classified_vector[label]
         datasets_project = project_data(datasets, w)
-        
+
         # Colorize the data with each class
         dot_style = 'ro' if label == 0 else 'bo'
 
@@ -142,14 +142,14 @@ def plot_results(classified_vector, w):
                 color='steelblue',
                 linewidth=0.5
             )
-        
+
         # Plot the datasets
         plt.plot(
             [data[0] for data in datasets],
             [data[1] for data in datasets],
             dot_style
         )
-        
+
         # Plot the projected points on the projection line
         plt.plot(
             [data[0] for data in datasets_project],
@@ -161,7 +161,7 @@ def plot_results(classified_vector, w):
     slope = (w[1] / w[0])[0]
     x = np.linspace(-4, 4, 1000)
     plt.plot(x, slope * x)
-    
+
     # Show the slope and intercept on the title
     plt.title(f'Projection Line: w={slope}, b={0.0}')
     plt.show()
