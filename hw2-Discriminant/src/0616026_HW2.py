@@ -96,7 +96,7 @@ def project_data(datasets, w):
 def cal_nearest_neighbor_idx(data_project, datasets_project):
     # Calculate the index of the nearest neighbor
     # among the projected datasets
-    # Note that this function assumes the projection line are NOT vertical
+    # Note that this function assumes the projection line is NOT vertical
     x_values = np.array([data[0] for data in datasets_project])
     abs_val_array = np.abs(x_values - data_project[0])
     min_diff_idx = abs_val_array.argmin()
