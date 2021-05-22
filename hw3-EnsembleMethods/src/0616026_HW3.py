@@ -130,12 +130,15 @@ class Node():
                     continue
 
                 if self.criterion == 'gini':
-                    pass
+                    gini_lt = gini(self.data, sequence_lt)
+                    gini_ge = gini(self.data, sequence_ge)
+                    avg_gini_val = (gini_lt * len(sequence_lt) + gini_ge * len(sequence_ge)) / len(self.sequence)
+                    info_gain_or_gini = avg_gini_val
                 elif self.criterion == 'entropy':
                     entropy_lt = entropy(self.data, sequence_lt)
                     entropy_ge = entropy(self.data, sequence_ge)
-                    split_entropy_val = (entropy_lt * len(sequence_lt) + entropy_ge * len(sequence_ge))
-                    info_gain_or_gini = self.entropy_val - split_entropy_val
+                    avg_entropy_val = (entropy_lt * len(sequence_lt) + entropy_ge * len(sequence_ge)) / len(self.sequence)
+                    info_gain_or_gini = self.entropy_val - avg_entropy_val
 
                 if max_info_gain_or_gini == None or info_gain_or_gini > max_info_gain_or_gini:
                     max_info_gain_or_gini = info_gain_or_gini
@@ -201,17 +204,22 @@ class DecisionTree():
         return results
 
 
-
 def main():
     # Read the datasets
     train_data = data_process(train_data_paths)
     all_sequence = [i for i in range(len(train_data))]
     all_attributes = [i for i in range(len(train_data[0]['x']))]
     
-    tree = DecisionTree(train_data, all_sequence, all_attributes, criterion='entropy')
+    tree_entropy = DecisionTree(train_data, all_sequence, all_attributes, criterion='entropy')
+    tree_gini = DecisionTree(train_data, all_sequence, all_attributes, criterion='gini')
 
     test_data = data_process(test_data_paths)
-    results = tree.predict_all(test_data)
+    results = tree_entropy.predict_all(test_data)
+    accuracy = sum(results) / len(results)
+    print(results, accuracy)
+
+    test_data = data_process(test_data_paths)
+    results = tree_gini.predict_all(test_data)
     accuracy = sum(results) / len(results)
     print(results, accuracy)
 
