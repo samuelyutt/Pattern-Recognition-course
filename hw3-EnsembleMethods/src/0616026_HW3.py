@@ -85,6 +85,13 @@ def entropy(data, sequence):
     return entropy_val
 
 
+def testing(tree_or_forest, test_data):
+    results = tree_or_forest.predict_all(test_data)
+    correctness = [results[i] == test_data[i]['y'] for i in range(len(test_data))]
+    accuracy = sum(correctness) / len(correctness)
+    return accuracy, correctness
+
+
 class Node():
     def __init__(self, data, sequence, attributes, cur_depth, criterion='gini', max_depth=None):
         self.data = data
@@ -119,7 +126,7 @@ class Node():
         max_info_gain_or_gini = None
         split_sequence_lt = []
         split_sequence_ge = []
-        
+
         for tmp_attribute in self.attributes:
             for idx in self.sequence:
                 info_gain_or_gini = None
@@ -200,7 +207,49 @@ class DecisionTree():
         results = []
         for data in test_data:
             prediction = self.predict(data['x'])
-            results.append(prediction == data['y'])
+            results.append(prediction)
+        return results
+
+
+class RandomForest():
+    def __init__(self, train_data, n_estimators, max_features, bootstrap, criterion='gini', max_depth=None):
+        self.trees = []
+
+        all_sequence = [i for i in range(len(train_data))]
+        all_attributes = [i for i in range(len(train_data[0]['x']))]
+
+        for i in range(n_estimators):
+            selected_sequence = []
+            if bootstrap:
+                for _ in range(len(all_sequence)):
+                    selected_sequence.append(random.choice(all_sequence))
+            else:
+                selected_sequence = all_sequence
+            selected_attributes = random.sample(all_attributes, max_features)
+
+            self.trees.append(
+                DecisionTree(
+                    train_data,
+                    selected_sequence,
+                    selected_attributes,
+                    criterion=criterion,
+                    max_depth=max_depth
+                )
+            )
+
+
+    def predict(self, x_data):
+        predictions = []
+        for tree in self.trees:
+            predictions.append(tree.predict(x_data))
+        return max(predictions, key=predictions.count)
+
+
+    def predict_all(self, test_data):
+        results = []
+        for data in test_data:
+            prediction = self.predict(data['x'])
+            results.append(prediction)
         return results
 
 
@@ -212,16 +261,27 @@ def main():
     
     tree_entropy = DecisionTree(train_data, all_sequence, all_attributes, criterion='entropy')
     tree_gini = DecisionTree(train_data, all_sequence, all_attributes, criterion='gini')
-
+    forest_entropy = RandomForest(train_data, n_estimators=5, max_features=15, bootstrap=False, criterion='entropy', max_depth=None)
+    forest_gini = RandomForest(train_data, n_estimators=5, max_features=15, bootstrap=False, criterion='gini', max_depth=None)
+    forest_entropy_b = RandomForest(train_data, n_estimators=5, max_features=15, bootstrap=True, criterion='entropy', max_depth=None)
+    forest_gini_b = RandomForest(train_data, n_estimators=5, max_features=15, bootstrap=True, criterion='gini', max_depth=None)
+    
+    
     test_data = data_process(test_data_paths)
-    results = tree_entropy.predict_all(test_data)
-    accuracy = sum(results) / len(results)
-    print(results, accuracy)
 
-    test_data = data_process(test_data_paths)
-    results = tree_gini.predict_all(test_data)
-    accuracy = sum(results) / len(results)
-    print(results, accuracy)
+    accuracy, correctness = testing(tree_entropy, test_data)
+    print(accuracy)
+    accuracy, correctness = testing(tree_gini, test_data)
+    print(accuracy)
+    accuracy, correctness = testing(forest_entropy, test_data)
+    print(accuracy)
+    accuracy, correctness = testing(forest_gini, test_data)
+    print(accuracy)
+    accuracy, correctness = testing(forest_entropy_b, test_data)
+    print(accuracy)
+    accuracy, correctness = testing(forest_gini_b, test_data)
+    print(accuracy)
+
 
 
 
