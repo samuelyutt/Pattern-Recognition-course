@@ -317,6 +317,19 @@ def main():
 
 
     """
+    Question 1
+
+    Compute the Entropy and Gini Index of the given array
+    """
+    given_array = [1, 2, 1, 1, 1, 1, 2, 2, 1, 1, 2]
+    
+    processed_given_array = [{'y': i} for i in given_array]
+    all_given_array = [i for i in range(len(given_array))]
+    print('Gini of data is', gini(processed_given_array, all_given_array))
+    print('Entropy of data is', entropy(processed_given_array, all_given_array))
+
+
+    """
     Question 2.1
 
     Using Criterion=‘gini’ to train the model and show the accuracy score of
