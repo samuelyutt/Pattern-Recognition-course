@@ -25,13 +25,15 @@ def data_process(data_paths):
     with open(y_data_path, newline='') as csvfile:
         y_data = list(csv.reader(csvfile))
 
+    feature_names = x_data[0]
+
     for i in range(1, len(x_data)):
         data.append({
             'x': [float(x) for x in x_data[i]],
             'y': int(y_data[i][0])
         })
 
-    return data
+    return data, feature_names
 
 
 def targets_classifier(data, sequence):
@@ -89,7 +91,7 @@ def testing(tree_or_forest, test_data):
     results = tree_or_forest.predict_all(test_data)
     correctness = [results[i] == test_data[i]['y'] for i in range(len(test_data))]
     accuracy = sum(correctness) / len(correctness)
-    return accuracy, correctness
+    return accuracy
 
 
 class Node():
@@ -182,6 +184,23 @@ class Node():
                 return self.node_ge.traverse(x_data)
 
 
+    def count_features(self):
+        if self.type == 'decide':
+            return {}
+        elif self.type == 'split':
+            print(self.cur_depth, self.attribute)
+            features_cnt_total = {self.attribute: 1}
+            features_cnt_lt = self.node_lt.count_features()
+            features_cnt_ge = self.node_ge.count_features()
+            for features_cnt in [features_cnt_lt, features_cnt_ge]:
+                for attribute in features_cnt:
+                    if attribute in features_cnt_total:
+                        features_cnt_total[attribute] += features_cnt[attribute]
+                    else:
+                        features_cnt_total[attribute] = features_cnt[attribute]
+            return features_cnt_total
+
+
 class DecisionTree():
     def __init__(self, data, sequence, attributes, criterion='gini', max_depth=None):
         self.data = data
@@ -190,12 +209,8 @@ class DecisionTree():
         self.criterion = criterion
         self.max_depth = max_depth
         self.root = Node(
-            self.data,
-            self.sequence,
-            self.attributes,
-            0,
-            self.criterion,
-            self.max_depth
+            self.data, self.sequence, self.attributes,
+            0, self.criterion, self.max_depth
         )
 
 
@@ -209,6 +224,9 @@ class DecisionTree():
             prediction = self.predict(data['x'])
             results.append(prediction)
         return results
+
+    def count_features(self):
+        return self.root.count_features()
 
 
 class RandomForest():
@@ -254,36 +272,141 @@ class RandomForest():
 
 
 def main():
-    # Read the datasets
-    train_data = data_process(train_data_paths)
+    # Read the datasets and initial params
+    train_data, feature_names = data_process(train_data_paths)
+    test_data, feature_names = data_process(test_data_paths)
     all_sequence = [i for i in range(len(train_data))]
     all_attributes = [i for i in range(len(train_data[0]['x']))]
+
+
+    """
+    Question 2.1
+
+    Using Criterion=‘gini’ to train the model and show the accuracy score of
+    test data by Max_depth=3 and Max_depth=10, respectively.
+    """
     
-    tree_entropy = DecisionTree(train_data, all_sequence, all_attributes, criterion='entropy')
-    tree_gini = DecisionTree(train_data, all_sequence, all_attributes, criterion='gini')
-    forest_entropy = RandomForest(train_data, n_estimators=5, max_features=15, bootstrap=False, criterion='entropy', max_depth=None)
-    forest_gini = RandomForest(train_data, n_estimators=5, max_features=15, bootstrap=False, criterion='gini', max_depth=None)
-    forest_entropy_b = RandomForest(train_data, n_estimators=5, max_features=15, bootstrap=True, criterion='entropy', max_depth=None)
-    forest_gini_b = RandomForest(train_data, n_estimators=5, max_features=15, bootstrap=True, criterion='gini', max_depth=None)
+    clf_depth3 = DecisionTree(
+        train_data, all_sequence, all_attributes,
+        criterion='gini',
+        max_depth=3
+    )
+    clf_depth10 = DecisionTree(
+        train_data, all_sequence, all_attributes,
+        criterion='gini',
+        max_depth=10
+    )
+    clf_depth3_accuracy = testing(clf_depth3, test_data)
+    clf_depth10_accuracy = testing(clf_depth10, test_data)
+    print(f'Accuracy of clf_depth3:', clf_depth3_accuracy)
+    print(f'Accuracy of clf_depth10:', clf_depth10_accuracy)
+
+
+    """
+    Question 2.2
+
+    Using Max_depth=3, showing the accuracy score of test data by
+    Criterion=‘gini’ and Criterion=’entropy’, respectively.
+    """
     
-    
-    test_data = data_process(test_data_paths)
-
-    accuracy, correctness = testing(tree_entropy, test_data)
-    print(accuracy)
-    accuracy, correctness = testing(tree_gini, test_data)
-    print(accuracy)
-    accuracy, correctness = testing(forest_entropy, test_data)
-    print(accuracy)
-    accuracy, correctness = testing(forest_gini, test_data)
-    print(accuracy)
-    accuracy, correctness = testing(forest_entropy_b, test_data)
-    print(accuracy)
-    accuracy, correctness = testing(forest_gini_b, test_data)
-    print(accuracy)
-
+    # clf_gini = DecisionTree(
+    #     train_data, all_sequence, all_attributes,
+    #     criterion='gini',
+    #     max_depth=3
+    # )
+    # clf_entropy = DecisionTree(
+    #     train_data, all_sequence, all_attributes,
+    #     criterion='entropy',
+    #     max_depth=3
+    # )
+    # clf_gini_accuracy = testing(clf_gini, test_data)
+    # clf_entropy_accuracy = testing(clf_entropy, test_data)
+    # print(f'Accuracy of clf_gini:', clf_gini_accuracy)
+    # print(f'Accuracy of clf_entropy:', clf_entropy_accuracy)
 
 
+    """
+    Question 3
+
+    Plot the feature importance of your Decision Tree model.
+    You can use the model for Question 2.1, max_depth=10.
+    You can simply count the number of a feature used in the tree,
+    instead of the formula in the reference.
+    Find more details on the sample code.
+    """
+
+    clf_depth10_features_cnt = clf_depth10.count_features()
+    sorted_features_cnt = sorted(
+        clf_depth10_features_cnt.items(),
+        key=lambda x:x[1]
+    )
+    plt.title('Feature Importance')
+    # plt.barh(
+    #     [feature_names[pair[0]] for pair in sorted_features_cnt],
+    #     [pair[1] for pair in sorted_features_cnt],
+    # )
+    # plt.subplots_adjust(left=0.3)
+    plt.show()
+
+
+    """
+    Question 4.1
+
+    Using Criterion=‘gini’, Max_depth=None, Max_features=sqrt(n_features), Bootstrap=True
+    to train the model and show the accuracy score of test data by
+    n_estimators=10 and n_estimators=100, respectively.
+    """
+
+    clf_10tree = RandomForest(
+        train_data,
+        n_estimators=10,
+        max_features=int(math.sqrt(len(all_attributes))),
+        bootstrap=True,
+        criterion='gini',
+        max_depth=None
+    )
+    clf_100tree = RandomForest(
+        train_data,
+        n_estimators=100,
+        max_features=int(math.sqrt(len(all_attributes))),
+        bootstrap=True,
+        criterion='gini',
+        max_depth=None
+    )
+    clf_10tree_accuracy = testing(clf_10tree, test_data)
+    clf_100tree_accuracy = testing(clf_100tree, test_data)
+    print(f'Accuracy of clf_10tree:', clf_10tree_accuracy)
+    print(f'Accuracy of clf_100tree:', clf_100tree_accuracy)
+
+
+    """
+    Question 4.2
+
+    Using Criterion=‘gini’, Max_depth=None, N_estimators=10,
+    showing the accuracy score of test data by
+    Max_features=sqrt(n_features) and Max_features=n_features, respectively.
+    """
+
+    clf_random_features = RandomForest(
+        train_data,
+        n_estimators=10,
+        max_features=int(math.sqrt(len(all_attributes))),
+        bootstrap=False,
+        criterion='gini',
+        max_depth=None
+    )
+    clf_all_features = RandomForest(
+        train_data,
+        n_estimators=10,
+        max_features=len(all_attributes),
+        bootstrap=False,
+        criterion='gini',
+        max_depth=None
+    )
+    clf_random_features_accuracy = testing(clf_random_features, test_data)
+    clf_all_features_accuracy = testing(clf_all_features, test_data)
+    print(f'Accuracy of clf_random_features:', clf_random_features_accuracy)
+    print(f'Accuracy of clf_all_features:', clf_all_features_accuracy)
 
 
 if __name__ == '__main__':
