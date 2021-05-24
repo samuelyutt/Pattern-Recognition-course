@@ -70,13 +70,13 @@ def sequence_classifier(data, sequence, attribute, threshold):
 
 def gini(data, sequence):
     # Calculate the gini index of the given sequence
-    gini_val = 0.0
+    gini_val = 1.0
     total_cnt = len(sequence)
     target_cnts = targets_classifier(data, sequence)
 
     for target in target_cnts:
         p = target_cnts[target] / total_cnt
-        gini_val += p ** 2
+        gini_val -= p ** 2
 
     return gini_val
 
@@ -89,7 +89,7 @@ def entropy(data, sequence):
 
     for target in target_cnts:
         p = target_cnts[target] / total_cnt
-        entropy_val -= p * math.log(p)
+        entropy_val -= p * math.log2(p)
 
     return entropy_val
 
@@ -139,14 +139,14 @@ class Node():
         self.type = 'split'
         self.attribute = 0
         self.threshold = 0.0
-        max_info_gain_or_gini = None
+        min_entropy_or_gini = None
         split_sequence_lt = []
         split_sequence_ge = []
 
         # Find the best attribute and threshold to split
         for tmp_attribute in self.attributes:
             for idx in self.sequence:
-                info_gain_or_gini = None
+                entropy_or_gini = None
                 tmp_threshold = self.data[idx]['x'][tmp_attribute]
                 sequence_lt, sequence_ge = sequence_classifier(self.data, self.sequence, tmp_attribute, tmp_threshold)
 
@@ -159,26 +159,24 @@ class Node():
                     # Calculate new gini index
                     gini_lt = gini(self.data, sequence_lt)
                     gini_ge = gini(self.data, sequence_ge)
-                    avg_gini_val = (gini_lt * len(sequence_lt) + gini_ge * len(sequence_ge)) / len(self.sequence)
-                    info_gain_or_gini = avg_gini_val
+                    entropy_or_gini = (gini_lt * len(sequence_lt) + gini_ge * len(sequence_ge)) / len(self.sequence)
                 elif self.criterion == 'entropy':
                     # Calculate information gain
                     entropy_lt = entropy(self.data, sequence_lt)
                     entropy_ge = entropy(self.data, sequence_ge)
-                    avg_entropy_val = (entropy_lt * len(sequence_lt) + entropy_ge * len(sequence_ge)) / len(self.sequence)
-                    info_gain_or_gini = self.entropy_val - avg_entropy_val
+                    entropy_or_gini = (entropy_lt * len(sequence_lt) + entropy_ge * len(sequence_ge)) / len(self.sequence)
 
-                if max_info_gain_or_gini == None or info_gain_or_gini > max_info_gain_or_gini:
+                if min_entropy_or_gini == None or entropy_or_gini < min_entropy_or_gini:
                     # Update max_info_gain_or_gini, self.attribute, self.threshold,
                     # split_sequence_lt, split_sequence_ge when a better attribute
                     # or threshold is found
-                    max_info_gain_or_gini = info_gain_or_gini
+                    min_entropy_or_gini = entropy_or_gini
                     self.attribute = tmp_attribute
                     self.threshold = tmp_threshold
                     split_sequence_lt = sequence_lt
                     split_sequence_ge = sequence_ge
 
-        # Construct two chiid nodes according to the best attribute and threshold found
+        # Construct two child nodes according to the best attribute and threshold found
         self.node_lt = Node(
             self.data,
             split_sequence_lt,
@@ -252,6 +250,7 @@ class DecisionTree():
             results.append(prediction)
         return results
 
+
     def count_features(self):
         # Return the used features count of this tree
         return self.root.count_features()
@@ -322,7 +321,7 @@ def main():
     Compute the Entropy and Gini Index of the given array
     """
     given_array = [1, 2, 1, 1, 1, 1, 2, 2, 1, 1, 2]
-    
+
     processed_given_array = [{'y': i} for i in given_array]
     all_given_array = [i for i in range(len(given_array))]
     print('Gini of data is', gini(processed_given_array, all_given_array))
