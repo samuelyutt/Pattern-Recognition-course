@@ -98,13 +98,18 @@ def testing(tree_or_forest, test_data):
     # Return the accuracy of the predictions of test data by
     # the given decision tree or random forest
     results = tree_or_forest.predict_all(test_data)
-    correctness = [results[i] == test_data[i]['y'] for i in range(len(test_data))]
+    correctness = [
+        results[i] == test_data[i]['y'] for i in range(len(test_data))
+    ]
     accuracy = sum(correctness) / len(correctness)
     return accuracy
 
 
 class Node():
-    def __init__(self, data, sequence, attributes, cur_depth, criterion='gini', max_depth=None):
+    def __init__(
+        self, data, sequence, attributes, cur_depth,
+        criterion='gini', max_depth=None
+    ):
         self.data = data
         self.sequence = sequence
         self.attributes = attributes
@@ -113,11 +118,11 @@ class Node():
         self.max_depth = max_depth
         self.entropy_val = entropy(data, sequence)
 
-        if self.entropy_val == 0 or (max_depth != None and cur_depth >= max_depth):
+        if (self.entropy_val == 0 or
+                (max_depth is not None and cur_depth >= max_depth)):
             self.decide()
         else:
             self.split()
-
 
     def decide(self):
         # Make this node type of decide
@@ -130,7 +135,6 @@ class Node():
             if target_cnts[target] > max_target_cnt:
                 max_target_cnt = target_cnts[target]
                 self.decision = target
-
 
     def split(self):
         # Make this node type of split
@@ -148,35 +152,44 @@ class Node():
             for idx in self.sequence:
                 entropy_or_gini = None
                 tmp_threshold = self.data[idx]['x'][tmp_attribute]
-                sequence_lt, sequence_ge = sequence_classifier(self.data, self.sequence, tmp_attribute, tmp_threshold)
+                sequence_lt, sequence_ge = sequence_classifier(
+                    self.data, self.sequence, tmp_attribute, tmp_threshold)
 
                 if sequence_lt == [] or sequence_ge == []:
-                    # If one of the seperated sequence is empty, then the other sequence
-                    # is the same as the current sequence, so this division is unnecessary
+                    # If one of the seperated sequence is empty,
+                    # then the other sequence is the same as the current
+                    # sequence, so this division is unnecessary
                     continue
 
                 if self.criterion == 'gini':
                     # Calculate new gini index
                     gini_lt = gini(self.data, sequence_lt)
                     gini_ge = gini(self.data, sequence_ge)
-                    entropy_or_gini = (gini_lt * len(sequence_lt) + gini_ge * len(sequence_ge)) / len(self.sequence)
+                    entropy_or_gini = (
+                        (gini_lt * len(sequence_lt) +
+                         gini_ge * len(sequence_ge)) / len(self.sequence)
+                    )
                 elif self.criterion == 'entropy':
                     # Calculate information gain
                     entropy_lt = entropy(self.data, sequence_lt)
                     entropy_ge = entropy(self.data, sequence_ge)
-                    entropy_or_gini = (entropy_lt * len(sequence_lt) + entropy_ge * len(sequence_ge)) / len(self.sequence)
+                    entropy_or_gini = (
+                        (entropy_lt * len(sequence_lt) +
+                         entropy_ge * len(sequence_ge)) / len(self.sequence))
 
-                if min_entropy_or_gini == None or entropy_or_gini < min_entropy_or_gini:
-                    # Update max_info_gain_or_gini, self.attribute, self.threshold,
-                    # split_sequence_lt, split_sequence_ge when a better attribute
-                    # or threshold is found
+                if (min_entropy_or_gini is None or
+                        entropy_or_gini < min_entropy_or_gini):
+                    # Update max_info_gain_or_gini, self.attribute,
+                    # self.threshold, split_sequence_lt, split_sequence_ge
+                    # when a better attribute or threshold is found
                     min_entropy_or_gini = entropy_or_gini
                     self.attribute = tmp_attribute
                     self.threshold = tmp_threshold
                     split_sequence_lt = sequence_lt
                     split_sequence_ge = sequence_ge
 
-        # Construct two child nodes according to the best attribute and threshold found
+        # Construct two child nodes according to the best
+        # attribute and threshold found
         self.node_lt = Node(
             self.data,
             split_sequence_lt,
@@ -194,7 +207,6 @@ class Node():
             self.max_depth
         )
 
-
     def traverse(self, x_data):
         # Return the decision of this node when traversed
         if self.type == 'decide':
@@ -205,41 +217,41 @@ class Node():
             else:
                 return self.node_ge.traverse(x_data)
 
-
     def count_features(self):
         # Return the used features count bellow this node when traversed
         if self.type == 'decide':
             return {}
         elif self.type == 'split':
-            features_cnt_total = {self.attribute: 1}
-            features_cnt_lt = self.node_lt.count_features()
-            features_cnt_ge = self.node_ge.count_features()
-            for features_cnt in [features_cnt_lt, features_cnt_ge]:
-                for attribute in features_cnt:
-                    if attribute in features_cnt_total:
-                        features_cnt_total[attribute] += features_cnt[attribute]
+            cnt_total = {self.attribute: 1}
+            cnt_lt = self.node_lt.count_features()
+            cnt_ge = self.node_ge.count_features()
+            for cnt in [cnt_lt, cnt_ge]:
+                for attribute in cnt:
+                    if attribute in cnt_total:
+                        cnt_total[attribute] += cnt[attribute]
                     else:
-                        features_cnt_total[attribute] = features_cnt[attribute]
-            return features_cnt_total
+                        cnt_total[attribute] = cnt[attribute]
+            return cnt_total
 
 
 class DecisionTree():
-    def __init__(self, data, sequence, attributes, criterion='gini', max_depth=None):
+    def __init__(
+        self, data, sequence, attributes,
+        criterion='gini', max_depth=None
+    ):
         self.data = data
         self.sequence = sequence
         self.attributes = attributes
         self.criterion = criterion
         self.max_depth = max_depth
         self.root = Node(
-            self.data, self.sequence, self.attributes,
-            0, self.criterion, self.max_depth
+            self.data, self.sequence, self.attributes, 0,
+            self.criterion, self.max_depth
         )
-
 
     def predict(self, x_data):
         # Return the prediciton of the given data predicted by this tree
         return self.root.traverse(x_data)
-
 
     def predict_all(self, test_data):
         # Return a list of the predicitons of the given data
@@ -250,14 +262,17 @@ class DecisionTree():
             results.append(prediction)
         return results
 
-
     def count_features(self):
         # Return the used features count of this tree
         return self.root.count_features()
 
 
 class RandomForest():
-    def __init__(self, train_data, n_estimators, max_features, bootstrap, criterion='gini', max_depth=None):
+    def __init__(
+        self, train_data,
+        n_estimators, max_features, bootstrap,
+        criterion='gini', max_depth=None
+    ):
         self.trees = []
 
         all_sequence = [i for i in range(len(train_data))]
@@ -273,7 +288,7 @@ class RandomForest():
                     selected_sequence.append(random.choice(all_sequence))
             else:
                 selected_sequence = all_sequence
-            
+
             # Random choose max_features of all attributes for the tree
             selected_attributes = random.sample(all_attributes, max_features)
 
@@ -288,14 +303,12 @@ class RandomForest():
                 )
             )
 
-
     def predict(self, x_data):
         # Return the prediciton of the given data predicted by this forest
         predictions = []
         for tree in self.trees:
             predictions.append(tree.predict(x_data))
         return max(predictions, key=predictions.count)
-
 
     def predict_all(self, test_data):
         # Return a list of the predicitons of the given data
@@ -314,19 +327,17 @@ def main():
     all_sequence = [i for i in range(len(train_data))]
     all_attributes = [i for i in range(len(train_data[0]['x']))]
 
-
     """
     Question 1
 
     Compute the Entropy and Gini Index of the given array
     """
-    given_array = [1, 2, 1, 1, 1, 1, 2, 2, 1, 1, 2]
+    data = [1, 2, 1, 1, 1, 1, 2, 2, 1, 1, 2]
 
-    processed_given_array = [{'y': i} for i in given_array]
-    all_given_array = [i for i in range(len(given_array))]
-    print('Gini of data is', gini(processed_given_array, all_given_array))
-    print('Entropy of data is', entropy(processed_given_array, all_given_array))
-
+    processed_data = [{'y': i} for i in data]
+    all_data_attributes = [i for i in range(len(data))]
+    print('Gini of data is', gini(processed_data, all_data_attributes))
+    print('Entropy of data is', entropy(processed_data, all_data_attributes))
 
     """
     Question 2.1
@@ -350,14 +361,13 @@ def main():
     print(f'Accuracy of clf_depth3:', clf_depth3_accuracy)
     print(f'Accuracy of clf_depth10:', clf_depth10_accuracy)
 
-
     """
     Question 2.2
 
     Using Max_depth=3, showing the accuracy score of test data by
     Criterion=‘gini’ and Criterion=’entropy’, respectively.
     """
-    
+
     clf_gini = DecisionTree(
         train_data, all_sequence, all_attributes,
         criterion='gini',
@@ -372,7 +382,6 @@ def main():
     clf_entropy_accuracy = testing(clf_entropy, test_data)
     print(f'Accuracy of clf_gini:', clf_gini_accuracy)
     print(f'Accuracy of clf_entropy:', clf_entropy_accuracy)
-
 
     """
     Question 3
@@ -389,7 +398,7 @@ def main():
     clf_depth10_features_cnt = clf_depth10.count_features()
     sorted_features_cnt = sorted(
         clf_depth10_features_cnt.items(),
-        key=lambda x:x[1]
+        key=lambda x: x[1]
     )
     plt.title('Feature Importance')
     plt.barh(
@@ -399,13 +408,12 @@ def main():
     plt.subplots_adjust(left=0.3)
     plt.show()
 
-
     """
     Question 4.1
 
-    Using Criterion=‘gini’, Max_depth=None, Max_features=sqrt(n_features), Bootstrap=True
-    to train the model and show the accuracy score of test data by
-    n_estimators=10 and n_estimators=100, respectively.
+    Using Criterion=‘gini’, Max_depth=None, Max_features=sqrt(n_features),
+    Bootstrap=True to train the model and show the accuracy score of test data
+    by n_estimators=10 and n_estimators=100, respectively.
     """
 
     clf_10tree = RandomForest(
@@ -428,7 +436,6 @@ def main():
     clf_100tree_accuracy = testing(clf_100tree, test_data)
     print(f'Accuracy of clf_10tree:', clf_10tree_accuracy)
     print(f'Accuracy of clf_100tree:', clf_100tree_accuracy)
-
 
     """
     Question 4.2
