@@ -1,3 +1,4 @@
+import csv
 import random
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,6 +9,10 @@ x_train_data_path = '../data/x_train.npy'
 y_train_data_path = '../data/y_train.npy'
 x_test_data_path = '../data/x_test.npy'
 y_test_data_path = '../data/y_test.npy'
+
+# HW1 datasets path
+hw1_train_data_path = '../../hw1-Regression/data/train_data.csv'
+hw1_test_data_path = '../../hw1-Regression/data/test_data.csv'
 
 # Params
 min_C, C_cnt = (0.1, 7)
@@ -56,14 +61,47 @@ def cross_validation(x_train, y_train, k=5):
     return cross_validated_data
 
 
+def plot_grid_search_results(grid_search_results, C_range, gamma_range):
+    data = np.array(grid_search_results)
+    fig, ax = plt.subplots()
+    plt.imshow(
+        data,
+        cmap='RdBu'
+    )
+    plt.title('Hyperparameter Gridsearch')
+    plt.xlabel('Gamma Parameter')
+    ax.set_xticks(range(len(gamma_range)))
+    ax.set_xticklabels(gamma_range)
+    plt.ylabel('C Parameter')
+    ax.set_yticks(range(len(C_range)))
+    ax.set_yticklabels(C_range)
+    plt.colorbar()
+    for (i, j), z in np.ndenumerate(data):
+        ax.text(j, i, '{:0.2f}'.format(z),
+            ha='center', va='center', color='white')
+    plt.show()
+
+
 def main():
+    C_range = [min_C * 10 ** i for i in range(C_cnt)]
+    gamma_range = [min_gamma * 10 ** i for i in range(gamma_cnt)]
+
+    """
+    Question 1
+
+    K-fold data partition
+    """
+
     # Read the datasets
     x_train = np.load(x_train_data_path)
     y_train = np.load(y_train_data_path)
     x_test = np.load(x_test_data_path)
     y_test = np.load(y_test_data_path)
-
+    
+    # Cross-validation
     cross_validated_data = cross_validation(x_train, y_train, k=5)
+    for split in cross_validated_data:
+        print(split)
 
     """
     Question 2
@@ -75,42 +113,48 @@ def main():
     Print the best hyperparameters you found.
     Note: We suggest use K=5
     """
+
+    # Grid search
     grid_search_results = []
     max_accuracy, best_C, best_gamma = None, None, None
-    C_range = [min_C * 10 ** i for i in range(C_cnt)]
-    gamma_range = [min_gamma * 10 ** i for i in range(gamma_cnt)]
     for C in C_range:
         total_accuracies = []
 
         for gamma in gamma_range:
+            # Apply each pair of C, gamma at a time
             total_accuracy = 0.0
-            clf = SVC(C=C, gamma=gamma, kernel='rbf')
             
+            # Calculate average accuracy
             for split in cross_validated_data:
                 training_folds = split[0]
                 validation_fold = split[1]
                 
+                # Construct SVM and fit the data
+                clf = SVC(C=C, gamma=gamma, kernel='rbf')
                 clf.fit(
                     [x_train[idx] for idx in training_folds],
                     [y_train[idx] for idx in training_folds]
                 )
 
+                # Predict on validation data
                 y_pred = clf.predict(
                     [x_train[idx] for idx in validation_fold]
                 )
 
+                # Calculate accuracy
                 correct_cnt = np.sum(
                     np.equal(
                         y_pred,
                         np.array([y_train[idx] for idx in validation_fold])
                     )
                 )
-
                 total_accuracy += correct_cnt / len(validation_fold)
             
             total_accuracy /= len(cross_validated_data)
             total_accuracies.append(total_accuracy)
 
+            # Update max_accuracy, best_C, best_gamma if a better pair of
+            # parameters is found
             if max_accuracy is None or total_accuracy > max_accuracy:
                 max_accuracy = total_accuracy
                 best_C = C
@@ -129,24 +173,7 @@ def main():
     To continue running, please close the plot window after it is shown.
     """
     
-    grid_search_results = np.array(grid_search_results)
-    fig, ax = plt.subplots()
-    plt.imshow(
-        grid_search_results,
-        cmap='RdBu'
-    )
-    plt.title('Hyperparameter Gridsearch')
-    plt.xlabel('Gamma Parameter')
-    ax.set_xticks(range(len(gamma_range)))
-    ax.set_xticklabels(gamma_range)
-    plt.ylabel('C Parameter')
-    ax.set_yticks(range(len(C_range)))
-    ax.set_yticklabels(C_range)
-    plt.colorbar()
-    for (i, j), z in np.ndenumerate(grid_search_results):
-        ax.text(j, i, '{:0.2f}'.format(z),
-            ha='center', va='center', color='white')
-    plt.show()
+    plot_grid_search_results(grid_search_results, C_range, gamma_range)
 
     """
     Question 4
@@ -162,6 +189,101 @@ def main():
     accuracy = correct_cnt / len(y_pred)
     print('Accuracy score:', accuracy)
 
+    """
+    Question 5
+
+    Consider the dataset used in HW1 for regression.
+    Please redo the above questions 2 to 4 with the dataset replaced by that
+    used in HW1, while the task is changed from classification to regression.
+    You should use the SVM regression model RBF kernel with grid search for
+    hyperparameters and K-fold cross-validation (you can use any K for
+    cross-validation). Then compare the linear regression model you have
+    implemented in HW1 with SVM by showing the Mean Square Errors of both
+    models on the test set.
+    """
+
+    # Precedure 5.1
+    # Read the datasets
+    x_train = []
+    y_train = []
+    x_test = []
+    y_test = []
+    with open(hw1_train_data_path, newline='') as csvfile:
+        for row in list(csv.reader(csvfile))[1:]:
+            x_train.append([float(row[0])])
+            y_train.append(float(row[1]))
+    with open(hw1_test_data_path, newline='') as csvfile:
+        for row in list(csv.reader(csvfile))[1:]:
+            x_test.append([float(row[0])])
+            y_test.append(float(row[1]))
+    x_train = np.array(x_train)
+    y_train = np.array(y_train)
+    x_test = np.array(x_test)
+    y_test = np.array(y_test)
+
+    # Cross-validation
+    cross_validated_data = cross_validation(x_train, y_train, k=5)
+    for split in cross_validated_data:
+        print(split)
+
+    # Precedure 5.2
+    # Grid search
+    grid_search_results = []
+    min_error, best_C, best_gamma = None, None, None
+    for C in C_range:
+        total_errors = []
+
+        for gamma in gamma_range:
+            # Apply each pair of C, gamma at a time
+            total_error = 0.0
+            
+            # Calculate average mean square error
+            for split in cross_validated_data:
+                training_folds = split[0]
+                validation_fold = split[1]
+                
+                # Construct SVM and fit the data
+                clf = SVR(C=C, gamma=gamma, kernel='rbf')
+                clf.fit(
+                    [x_train[idx] for idx in training_folds],
+                    [y_train[idx] for idx in training_folds]
+                )
+
+                # Predict on validation data
+                y_pred = clf.predict(
+                    [x_train[idx] for idx in validation_fold]
+                )
+
+                # Calculate mean square error
+                total_error += np.mean(np.square((
+                    y_pred -
+                    np.array([y_train[idx] for idx in validation_fold])
+                )))
+
+            total_error /= len(cross_validated_data)
+            total_errors.append(total_error)
+
+            # Update min_error, best_C, best_gamma if a better pair of
+            # parameters is found
+            if min_error is None or total_error < min_error:
+                min_error = total_error
+                best_C = C
+                best_gamma = gamma
+        grid_search_results.append(total_errors)
+
+    print(f'Best hyperparameters found: C = {best_C}, gamma = {best_gamma}')
+
+    # Precedure 5.3
+    plot_grid_search_results(grid_search_results, C_range, gamma_range)
+
+    # Precedure 5.4
+    # Train the model by the best hyperparameters found on the whole training
+    # set and evaluate the performance on the test set
+    clf = SVR(C=best_C, gamma=best_gamma, kernel='rbf')
+    clf.fit(x_train, y_train)
+    y_pred = clf.predict(x_test)
+    mean_error = np.mean(np.square(y_pred - y_test))
+    print('Mean error:', mean_error)
 
 
 if __name__ == '__main__':
