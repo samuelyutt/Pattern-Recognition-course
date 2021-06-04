@@ -21,10 +21,10 @@ min_gamma, gamma_cnt = (0.00001, 7)
 
 def cross_validation(x_train, y_train, k=5):
     cross_validated_data = []
-    
+
     total_data_cnt = len(x_train)
     tmp_fold_data_cnt = total_data_cnt // k
-    
+
     # Initial all indexes
     all_indexes = [i for i in range(total_data_cnt)]
     random.shuffle(all_indexes)
@@ -45,17 +45,17 @@ def cross_validation(x_train, y_train, k=5):
     for split_i in range(k):
         # Assign one fold as validition fold
         validation_fold = folds[split_i]
-        
+
         # Assign the rest folds as training folds
         training_folds = []
         for i in range(k):
             if i != split_i:
                 training_folds += folds[i]
-        
+
         # Sort the folds
         validation_fold.sort()
         training_folds.sort()
-        
+
         cross_validated_data.append([training_folds, validation_fold])
 
     return cross_validated_data
@@ -78,7 +78,7 @@ def plot_grid_search_results(grid_search_results, C_range, gamma_range):
     plt.colorbar()
     for (i, j), z in np.ndenumerate(data):
         ax.text(j, i, '{:0.2f}'.format(z),
-            ha='center', va='center', color='white')
+                ha='center', va='center', color='white')
     plt.show()
 
 
@@ -97,7 +97,7 @@ def main():
     y_train = np.load(y_train_data_path)
     x_test = np.load(x_test_data_path)
     y_test = np.load(y_test_data_path)
-    
+
     # Cross-validation
     cross_validated_data = cross_validation(x_train, y_train, k=5)
     for split in cross_validated_data:
@@ -105,7 +105,7 @@ def main():
 
     """
     Question 2
-    
+
     Grid Search & Cross-validation:
     using sklearn.svm.SVC to train a classifier on the provided train set
     and conduct the grid search of C and gamma, “kernel’=’rbf’
@@ -123,12 +123,12 @@ def main():
         for gamma in gamma_range:
             # Apply each pair of C, gamma at a time
             total_accuracy = 0.0
-            
+
             # Calculate average accuracy
             for split in cross_validated_data:
                 training_folds = split[0]
                 validation_fold = split[1]
-                
+
                 # Construct SVM and fit the data
                 clf = SVC(C=C, gamma=gamma, kernel='rbf')
                 clf.fit(
@@ -149,7 +149,7 @@ def main():
                     )
                 )
                 total_accuracy += correct_cnt / len(validation_fold)
-            
+
             total_accuracy /= len(cross_validated_data)
             total_accuracies.append(total_accuracy)
 
@@ -165,14 +165,14 @@ def main():
 
     """
     Question 3
-    
+
     Plot the grid search results of your SVM.
     The x, y represent the hyperparameters of gamma and C, respectively.
     And the color represents the average score of validation folds.
-    
+
     To continue running, please close the plot window after it is shown.
     """
-    
+
     plot_grid_search_results(grid_search_results, C_range, gamma_range)
 
     """
@@ -236,12 +236,12 @@ def main():
         for gamma in gamma_range:
             # Apply each pair of C, gamma at a time
             total_error = 0.0
-            
+
             # Calculate average mean square error
             for split in cross_validated_data:
                 training_folds = split[0]
                 validation_fold = split[1]
-                
+
                 # Construct SVM and fit the data
                 clf = SVR(C=C, gamma=gamma, kernel='rbf')
                 clf.fit(
