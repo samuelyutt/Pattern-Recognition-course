@@ -1,5 +1,6 @@
 import random
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.svm import SVC, SVR
 
 # Datasets path
@@ -9,8 +10,8 @@ x_test_data_path = '../data/x_test.npy'
 y_test_data_path = '../data/y_test.npy'
 
 # Params
-C_interval = (0.01, 1000.0)
-gamma_interval = (0.0001, 1000.0)
+min_C, C_cnt = (0.1, 7)
+min_gamma, gamma_cnt = (0.00001, 7)
 
 
 def cross_validation(x_train, y_train, k=5):
@@ -62,49 +63,28 @@ def main():
     x_test = np.load(x_test_data_path)
     y_test = np.load(y_test_data_path)
 
-    cross_validated_data = cross_validation(x_train, y_train)
-    # print(cross_validated_data)
+    cross_validated_data = cross_validation(x_train, y_train, k=5)
 
-
-    # split = cross_validated_data[0]
-    # training_folds = split[0]
-    # validation_fold = split[1]
-    # # clf = SVC(gamma='auto')
-    # clf = SVC(C=10000, gamma=0.0001)
-
-    # print([x_train[i] for i in training_folds])
-    # print(np.array([x_train[i] for i in training_folds]))
+    """
+    Question 2
     
-    # clf.fit(
-    #     [x_train[i] for i in training_folds],
-    #     [y_train[i] for i in training_folds]
-    # )
+    Grid Search & Cross-validation:
+    using sklearn.svm.SVC to train a classifier on the provided train set
+    and conduct the grid search of C and gamma, “kernel’=’rbf’
+    to find the best hyperparameters by cross-validation.
+    Print the best hyperparameters you found.
+    Note: We suggest use K=5
+    """
+    grid_search_results = []
+    max_accuracy, best_C, best_gamma = None, None, None
+    C_range = [min_C * 10 ** i for i in range(C_cnt)]
+    gamma_range = [min_gamma * 10 ** i for i in range(gamma_cnt)]
+    for C in C_range:
+        total_accuracies = []
 
-    # predictions = clf.predict(
-    #     [x_train[i] for i in validation_fold]
-    # )
-    # print(np.array([1, 0, 1]))
-    # print(np.array([1, 0, 0]))
-
-    # print(np.equal(np.array([1, 0, 1]), np.array([1, 0, 0])))
-
-    
-    # correct_cnt = np.sum((np.equal(np.array([1, 0, 1]), np.array([1, 0, 0]))))
-
-    # print(correct_cnt)
-
-    
-    min_C, max_C = C_interval
-    min_gamma, max_gamma = gamma_interval
-
-    C = min_C
-    while C <= max_C:
-        gamma = min_gamma
-        
-        while gamma <= max_gamma:
-            clf = SVC(C=C, gamma=gamma)
-            print()
-            print(C, gamma)
+        for gamma in gamma_range:
+            total_accuracy = 0.0
+            clf = SVC(C=C, gamma=gamma, kernel='rbf')
             
             for split in cross_validated_data:
                 training_folds = split[0]
@@ -115,20 +95,73 @@ def main():
                     [y_train[idx] for idx in training_folds]
                 )
 
-                predictions = clf.predict(
+                y_pred = clf.predict(
                     [x_train[idx] for idx in validation_fold]
                 )
 
                 correct_cnt = np.sum(
                     np.equal(
-                        predictions,
+                        y_pred,
                         np.array([y_train[idx] for idx in validation_fold])
                     )
                 )
 
-                print(correct_cnt / len(validation_fold))
-            gamma *= 10
-        C *= 10
+                total_accuracy += correct_cnt / len(validation_fold)
+            
+            total_accuracy /= len(cross_validated_data)
+            total_accuracies.append(total_accuracy)
+
+            if max_accuracy is None or total_accuracy > max_accuracy:
+                max_accuracy = total_accuracy
+                best_C = C
+                best_gamma = gamma
+        grid_search_results.append(total_accuracies)
+
+    print(f'Best hyperparameters found: C = {best_C}, gamma = {best_gamma}')
+
+    """
+    Question 3
+    
+    Plot the grid search results of your SVM.
+    The x, y represent the hyperparameters of gamma and C, respectively.
+    And the color represents the average score of validation folds.
+    
+    To continue running, please close the plot window after it is shown.
+    """
+    
+    grid_search_results = np.array(grid_search_results)
+    fig, ax = plt.subplots()
+    plt.imshow(
+        grid_search_results,
+        cmap='RdBu'
+    )
+    plt.title('Hyperparameter Gridsearch')
+    plt.xlabel('Gamma Parameter')
+    ax.set_xticks(range(len(gamma_range)))
+    ax.set_xticklabels(gamma_range)
+    plt.ylabel('C Parameter')
+    ax.set_yticks(range(len(C_range)))
+    ax.set_yticklabels(C_range)
+    plt.colorbar()
+    for (i, j), z in np.ndenumerate(grid_search_results):
+        ax.text(j, i, '{:0.2f}'.format(z),
+            ha='center', va='center', color='white')
+    plt.show()
+
+    """
+    Question 4
+
+    Train your SVM model by the best hyperparameters you found from question 2
+    on the whole training set and evaluate the performance on the test set.
+    """
+
+    clf = SVC(C=best_C, gamma=best_gamma, kernel='rbf')
+    clf.fit(x_train, y_train)
+    y_pred = clf.predict(x_test)
+    correct_cnt = np.sum(np.equal(y_pred, y_test))
+    accuracy = correct_cnt / len(y_pred)
+    print('Accuracy score:', accuracy)
+
 
 
 if __name__ == '__main__':
