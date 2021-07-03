@@ -1,6 +1,9 @@
 # macOS file system files
 .DS_Store
 
+# HW5 data
+hw5-DNN/data/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
